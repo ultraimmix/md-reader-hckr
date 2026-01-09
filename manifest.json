@@ -1,0 +1,75 @@
+{
+   "action": {
+      "default_icon": {
+         "16": "assets/logo.png",
+         "24": "assets/logo.png",
+         "32": "assets/logo.png"
+      },
+      "default_popup": "./dist/popup/index.html",
+      "default_title": "__MSG_ext_name__"
+   },
+   "author": "Bener",
+   "background": {
+      "service_worker": "./dist/background/index.mjs"
+   },
+   "commands": {
+      "toggleCentered": {
+         "description": "__MSG_command_toggle_centered__",
+         "suggested_key": {
+            "default": "Alt+Shift+C"
+         }
+      },
+      "togglePageTheme": {
+         "description": "__MSG_command_toggle_theme__",
+         "suggested_key": {
+            "default": "Alt+Shift+T"
+         }
+      },
+      "toggleRefresh": {
+         "description": "__MSG_command_toggle_refresh__",
+         "suggested_key": {
+            "default": "Alt+Shift+R"
+         }
+      },
+      "toggleSide": {
+         "description": "__MSG_command_toggle_side__",
+         "suggested_key": {
+            "default": "Alt+Shift+B"
+         }
+      }
+   },
+   "content_scripts": [ {
+      "css": [ "dist/content/style.css" ],
+      "js": [ "dist/content/index.global.js" ],
+      "matches": [ "*://*/*.md", "*://*/*.mdx", "*://*/*.mdc", "*://*/*.mkd", "*://*/*.txt", "*://*/*.markdown", "*://*/*.MD", "*://*/*.MDX", "*://*/*.MDC", "*://*/*.MKD", "*://*/*.TXT", "*://*/*.MARKDOWN", "file://*/*.md", "file://*/*.mdx", "file://*/*.mdc", "file://*/*.mkd", "file://*/*.txt", "file://*/*.markdown", "file://*/*.MD", "file://*/*.MDX", "file://*/*.MDC", "file://*/*.MKD", "file://*/*.TXT", "file://*/*.MARKDOWN", "*://*/*.md?*", "*://*/*.mdx?*", "*://*/*.mdc?*", "*://*/*.mkd?*", "*://*/*.txt?*", "*://*/*.markdown?*", "*://*/*.MD?*", "*://*/*.MDX?*", "*://*/*.MDC?*", "*://*/*.MKD?*", "*://*/*.TXT?*", "*://*/*.MARKDOWN?*", "file://*/*.md?*", "file://*/*.mdx?*", "file://*/*.mdc?*", "file://*/*.mkd?*", "file://*/*.txt?*", "file://*/*.markdown?*", "file://*/*.MD?*", "file://*/*.MDX?*", "file://*/*.MDC?*", "file://*/*.MKD?*", "file://*/*.TXT?*", "file://*/*.MARKDOWN?*", "file://*/*/", "file:///" ],
+      "run_at": "document_start"
+   } ],
+   "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'"
+   },
+   "default_locale": "en",
+   "description": "__MSG_ext_desc__",
+   "homepage_url": "https://md-reader.github.io",
+   "icons": {
+      "128": "assets/logo.png",
+      "16": "assets/logo.png",
+      "32": "assets/logo.png",
+      "48": "assets/logo.png",
+      "512": "assets/logo.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlh/B5O3zy94nGguufLRd9wJijtes7cONdeQWeR/b2ExQDM/s5JG98bWAeDPCr6RI5qYh/z8SPMAZqVFNm+chBY0HrmTokRLzzS9PTvug3VEtUD9sEaVLgzDfSasV+P6q0RvOLYJ/H3XN7ZW2wAh8GRK0hlcC4dsspCdMde5C1iecTpep4dsUS+rhXIVx1Zio7kMQCaM2o90jyiadUSvDLOkAs6Zzi5D5YXdzm+yBsk5Ip9tgxDr7N4Ke8Bqg1v81f4C7nZdS9w2osoFI1RnKsNsmZBc8mWfRTxtmllrZcllg393kfzF9pWshPSwZPch7rXmLY3xK4bJQ2RKe/BdOkwIDAQAB",
+   "manifest_version": 3,
+   "name": "__MSG_ext_name__",
+   "options_ui": {
+      "open_in_tab": true,
+      "page": "./dist/options/index.html"
+   },
+   "permissions": [ "storage", "tabs" ],
+   "update_url": "https://edge.microsoft.com/extensionwebstorebase/v1/crx",
+   "version": "3.6.1",
+   "version_name": "3.6.1",
+   "web_accessible_resources": [ {
+      "matches": [ "\u003Call_urls>" ],
+      "resources": [ "assets/*", "dist/popup/*", "dist/options/*" ]
+   } ]
+}
