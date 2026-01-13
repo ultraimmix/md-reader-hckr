@@ -139,6 +139,28 @@
     });
   }
 
+  // Hide the folder/outline tab switcher in left panel
+  function hideTabSwitcher() {
+    const sideHead = document.querySelector('.mdr-side__head');
+    if (!sideHead) return;
+
+    // Find and hide the tab group
+    const children = sideHead.children;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (child.classList.contains('flex-1') || child.classList.contains('panel-toggle-btn')) {
+        continue;
+      }
+      if (child.querySelector('[value="folder"]') ||
+          child.querySelector('[value="outline"]') ||
+          child.getAttribute('role') === 'radiogroup' ||
+          child.getAttribute('role') === 'tablist') {
+        child.style.display = 'none';
+      }
+    }
+  }
+
+
   // Add toggle button to left panel
   function setupLeftPanel() {
     const sidePanel = document.querySelector('.mdr-side');
@@ -153,25 +175,12 @@
       toggleBtn.addEventListener('click', () => togglePanel('left'));
 
       // Add to the end of header
-      const flex1 = header.querySelector('.flex-1');
-      if (flex1) {
-        flex1.parentNode.insertBefore(toggleBtn, flex1.nextSibling);
-      } else {
-        header.appendChild(toggleBtn);
-      }
+      header.appendChild(toggleBtn);
     }
 
-    // Force folder view (hide outline toggle)
-    forceFolder();
-  }
-
-  // Force folder view in left panel
-  function forceFolder() {
-    // Try to click folder tab if it exists
-    const folderTab = document.querySelector('.mdr-side [value="folder"]');
-    if (folderTab && !folderTab.closest('[aria-selected="true"]')) {
-      folderTab.click();
-    }
+    // Hide tab switcher (folder loading is now handled in main JS)
+    setTimeout(hideTabSwitcher, 500);
+    setTimeout(hideTabSwitcher, 1000);
   }
 
   // Toggle panel collapsed state
@@ -286,6 +295,10 @@
       observer.observe(content, { childList: true, subtree: true });
     }
 
+    // Extra hide tab switcher calls (Vue might re-render)
+    setTimeout(hideTabSwitcher, 1500);
+    setTimeout(hideTabSwitcher, 2500);
+
     isInitialized = true;
     console.log('[MDR Three-Column] Layout initialized');
   }
@@ -310,15 +323,6 @@
     });
 
     observer.observe(document.documentElement, { attributes: true });
-
-    // Also try on DOMContentLoaded and load
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(waitForReady, 500);
-    });
-
-    window.addEventListener('load', () => {
-      setTimeout(waitForReady, 500);
-    });
 
     // Fallback timeout
     setTimeout(() => {

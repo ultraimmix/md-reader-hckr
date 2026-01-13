@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr log --oneline --all)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr log --format=\"%h %s\")",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr show 4253207 --stat)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr diff ad59621 4253207 -- decode_logic.js)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr show ad59621:decode_logic.js)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr show ad59621 --stat)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr log:*)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr remote:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr show 3cde141)",
+      "Bash(tree:*)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr ls-files:*)",
+      "Bash(du -sh:*)",
+      "Bash(git -C /Users/hoo/Temp/md-reader-hckr diff ad59621..4253207 --stat)",
+    ]
+  }
+}
