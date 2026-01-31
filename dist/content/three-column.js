@@ -16,13 +16,13 @@
     outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h12"/></svg>'
   };
 
-  // Load saved state
+  // Load saved state (only for right/outline panel)
   function loadState() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : { leftCollapsed: false, rightCollapsed: false };
+      return saved ? JSON.parse(saved) : { rightCollapsed: false };
     } catch (e) {
-      return { leftCollapsed: false, rightCollapsed: false };
+      return { rightCollapsed: false };
     }
   }
 
@@ -161,63 +161,42 @@
   }
 
 
-  // Add toggle button to left panel
+  // Setup left panel - only hide tab switcher, don't add extra toggle button
+  // The main script already provides a toggle button for the left panel
   function setupLeftPanel() {
-    const sidePanel = document.querySelector('.mdr-side');
-    if (!sidePanel) return;
-
-    // Check if toggle already exists
-    if (sidePanel.querySelector('.panel-toggle-btn')) return;
-
-    const header = sidePanel.querySelector('.mdr-side__head');
-    if (header) {
-      const toggleBtn = createToggleButton('left');
-      toggleBtn.addEventListener('click', () => togglePanel('left'));
-
-      // Add to the end of header
-      header.appendChild(toggleBtn);
-    }
-
     // Hide tab switcher (folder loading is now handled in main JS)
     setTimeout(hideTabSwitcher, 500);
     setTimeout(hideTabSwitcher, 1000);
   }
 
-  // Toggle panel collapsed state
+  // Toggle panel collapsed state (only for right/outline panel now)
   function togglePanel(side) {
-    const state = loadState();
+    if (side !== 'right') return; // Left panel is controlled by main script
 
-    if (side === 'left') {
-      state.leftCollapsed = !state.leftCollapsed;
-      const sidePanel = document.querySelector('.mdr-side');
-      if (sidePanel) {
-        sidePanel.classList.toggle('left-collapsed', state.leftCollapsed);
-      }
-      document.body.classList.toggle('left-collapsed', state.leftCollapsed);
-    } else {
-      state.rightCollapsed = !state.rightCollapsed;
-      if (outlinePanel) {
-        outlinePanel.classList.toggle('right-collapsed', state.rightCollapsed);
-      }
-      document.body.classList.toggle('right-collapsed', state.rightCollapsed);
+    const state = loadState();
+    state.rightCollapsed = !state.rightCollapsed;
+
+    if (outlinePanel) {
+      outlinePanel.classList.toggle('right-collapsed', state.rightCollapsed);
     }
+    document.body.classList.toggle('right-collapsed', state.rightCollapsed);
 
     saveState(state);
   }
 
-  // Apply saved state
+  // Apply saved state (only for right/outline panel now)
   function applyState() {
     const state = loadState();
 
-    const sidePanel = document.querySelector('.mdr-side');
-    if (sidePanel && state.leftCollapsed) {
-      sidePanel.classList.add('left-collapsed');
-      document.body.classList.add('left-collapsed');
-    }
-
-    if (outlinePanel && state.rightCollapsed) {
-      outlinePanel.classList.add('right-collapsed');
-      document.body.classList.add('right-collapsed');
+    // Only manage right panel state - left panel is controlled by main script
+    if (outlinePanel) {
+      if (state.rightCollapsed) {
+        outlinePanel.classList.add('right-collapsed');
+        document.body.classList.add('right-collapsed');
+      } else {
+        outlinePanel.classList.remove('right-collapsed');
+        document.body.classList.remove('right-collapsed');
+      }
     }
   }
 

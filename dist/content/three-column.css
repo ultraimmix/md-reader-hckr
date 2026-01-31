@@ -8,18 +8,11 @@
   --panel-transition: 0.3s ease;
 }
 
-/* Hide the original side panel tab switcher (folder/outline) */
-:root[mdr-loaded] .mdr-side__head .flex-1 + div,
-:root[mdr-loaded] .mdr-side__head > div:last-child,
+/* Hide only the folder/outline tab switcher, keep search and settings buttons */
 :root[mdr-loaded] .mdr-side__head [role="radiogroup"],
 :root[mdr-loaded] .mdr-side__head [role="tablist"],
 :root[mdr-loaded] .mdr-side [value="folder"],
 :root[mdr-loaded] .mdr-side [value="outline"] {
-  display: none !important;
-}
-
-/* Hide any tab/segment control in the side header */
-:root[mdr-loaded] .mdr-side__head > *:not(.flex-1):not(.panel-toggle-btn):not(:first-child) {
   display: none !important;
 }
 
