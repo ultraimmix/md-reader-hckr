@@ -1,0 +1,212 @@
+/* Three-column layout for Markdown Reader */
+/* Left: Folder | Center: Content | Right: Outline */
+
+:root {
+  --left-panel-width: 250px;
+  --right-panel-width: 250px;
+  --panel-collapsed-width: 40px;
+  --panel-transition: 0.3s ease;
+}
+
+/* Hide only the folder/outline tab switcher, keep search and settings buttons */
+:root[mdr-loaded] .mdr-side__head [role="radiogroup"],
+:root[mdr-loaded] .mdr-side__head [role="tablist"],
+:root[mdr-loaded] .mdr-side [value="folder"],
+:root[mdr-loaded] .mdr-side [value="outline"] {
+  display: none !important;
+}
+
+/* Left panel (folder) - reuse existing mdr-side */
+:root[mdr-loaded] .mdr-side {
+  width: var(--left-panel-width) !important;
+  transition: width var(--panel-transition), transform var(--panel-transition) !important;
+}
+
+:root[mdr-loaded] .mdr-side.left-collapsed {
+  width: var(--panel-collapsed-width) !important;
+}
+
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__content,
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__head,
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__search {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Right panel (outline) - new panel */
+:root[mdr-loaded] .mdr-outline-panel {
+  position: fixed !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: var(--right-panel-width) !important;
+  background: var(--bg-light) !important;
+  color: var(--side-color) !important;
+  z-index: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-left: 1px solid var(--border-light, rgba(128, 128, 128, 0.2)) !important;
+  transition: width var(--panel-transition), transform var(--panel-transition) !important;
+  overflow: hidden !important;
+}
+
+:root[mdr-loaded] .mdr-outline-panel.right-collapsed {
+  width: var(--panel-collapsed-width) !important;
+}
+
+:root[mdr-loaded] .mdr-outline-panel.right-collapsed .outline-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Outline panel header */
+.mdr-outline-panel .outline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light, rgba(128, 128, 128, 0.2));
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.mdr-outline-panel .outline-header .outline-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Outline content area */
+.mdr-outline-panel .outline-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Outline item styles */
+.mdr-outline-panel .outline-item {
+  display: block;
+  padding: 6px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--side-color, inherit);
+  font-size: 13px;
+  line-height: 1.5;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mdr-outline-panel .outline-item:hover {
+  background: var(--bg-hover, rgba(128, 128, 128, 0.1));
+}
+
+.mdr-outline-panel .outline-item.active {
+  background: var(--bg-active, rgba(128, 128, 128, 0.15));
+  color: var(--text-accent, #0066cc);
+}
+
+/* Heading level indentation */
+.mdr-outline-panel .outline-item[data-level="1"] { padding-left: 16px; font-weight: 600; }
+.mdr-outline-panel .outline-item[data-level="2"] { padding-left: 28px; }
+.mdr-outline-panel .outline-item[data-level="3"] { padding-left: 40px; font-size: 12px; }
+.mdr-outline-panel .outline-item[data-level="4"] { padding-left: 52px; font-size: 12px; }
+.mdr-outline-panel .outline-item[data-level="5"] { padding-left: 64px; font-size: 12px; }
+.mdr-outline-panel .outline-item[data-level="6"] { padding-left: 76px; font-size: 12px; }
+
+/* Toggle buttons */
+.panel-toggle-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--side-color, inherit);
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.panel-toggle-btn:hover {
+  opacity: 1;
+  background: var(--bg-hover, rgba(128, 128, 128, 0.1));
+}
+
+.panel-toggle-btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.left-collapsed .panel-toggle-btn svg,
+.right-collapsed .panel-toggle-btn svg {
+  transform: rotate(180deg);
+}
+
+/* Main content area adjustment */
+:root[mdr-loaded] .mdr-content {
+  margin-left: var(--left-panel-width) !important;
+  margin-right: var(--right-panel-width) !important;
+  transition: margin var(--panel-transition) !important;
+  max-width: none !important;
+  width: auto !important;
+}
+
+:root[mdr-loaded] .mdr-side.left-collapsed ~ .mdr-content,
+:root[mdr-loaded] body.left-collapsed .mdr-content {
+  margin-left: var(--panel-collapsed-width) !important;
+}
+
+:root[mdr-loaded] body.right-collapsed .mdr-content {
+  margin-right: var(--panel-collapsed-width) !important;
+}
+
+/* Collapsed state toggle button positioning */
+.mdr-side.left-collapsed .panel-toggle-btn,
+.mdr-outline-panel.right-collapsed .panel-toggle-btn {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Print styles - hide panels */
+@media print {
+  .mdr-outline-panel,
+  .panel-toggle-btn {
+    display: none !important;
+  }
+
+  :root[mdr-loaded] .mdr-content {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* Responsive: narrow screens */
+@media (max-width: 900px) {
+  :root {
+    --left-panel-width: 200px;
+    --right-panel-width: 200px;
+  }
+}
+
+@media (max-width: 700px) {
+  :root[mdr-loaded] .mdr-side,
+  :root[mdr-loaded] .mdr-outline-panel {
+    width: var(--panel-collapsed-width) !important;
+  }
+
+  :root[mdr-loaded] .mdr-content {
+    margin-left: var(--panel-collapsed-width) !important;
+    margin-right: var(--panel-collapsed-width) !important;
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "markdown-reader",
+  "version": "3.6.1",
+  "description": "A Chrome/Edge extension that renders markdown files beautifully in the browser",
+  "author": "Bener",
+  "license": "MIT",
+  "homepage": "https://md-reader.github.io",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:background": "vite build --config vite.config.background.ts",
+    "build:content": "vite build --config vite.config.content.ts",
+    "build:popup": "vite build --config vite.config.popup.ts",
+    "build:options": "vite build --config vite.config.options.ts",
+    "build:all": "npm run build:background && npm run build:content && npm run build:popup && npm run build:options",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@types/chrome": "^0.0.315",
+    "crx": "^5.0.1",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "prismjs": "^1.29.0",
+    "typescript": "^5.7.3",
+    "unocss": "^0.66.4",
+    "vite": "^6.0.11",
+    "vite-plugin-crx": "^3.0.0"
+  },
+  "keywords": [
+    "chrome-extension",
+    "markdown",
+    "markdown-viewer",
+    "markdown-renderer",
+    "md"
+  ]
+}
