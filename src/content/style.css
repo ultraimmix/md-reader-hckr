@@ -562,6 +562,227 @@
    File Tree (Side Panel)
    ============================================================================ */
 
+.mdr-file-tree {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.mdr-file-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+  min-height: 28px;
+}
+
+.mdr-file-item:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+.mdr-file-item.active {
+  background: var(--bg-active, rgba(0, 102, 204, 0.1));
+  color: var(--text-accent);
+}
+
+.mdr-file-item.is-folder {
+  font-weight: 500;
+}
+
+.mdr-file-item .file-chevron {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.mdr-file-item .file-chevron svg {
+  width: 12px;
+  height: 12px;
+}
+
+.mdr-file-item .file-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.mdr-file-item .file-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mdr-file-item.is-folder .file-icon {
+  color: #e8a838;
+}
+
+.mdr-file-item .file-name {
+  flex: 1;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.mdr-file-item .file-name mark {
+  background: rgba(255, 200, 0, 0.3);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Side Panel Header */
+.mdr-side__title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mdr-side__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.mdr-side__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Side Panel Search */
+.mdr-side__search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mdr-side__search-icon {
+  position: absolute;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.mdr-side__search-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mdr-side__search input {
+  width: 100%;
+  padding: 6px 10px 6px 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mdr-side__search input:focus {
+  outline: none;
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+}
+
+.mdr-side__search input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Side Panel Loading/Error States */
+.mdr-side__loading {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.mdr-side__error {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.mdr-side__error p {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.mdr-side__retry-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mdr-side__retry-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-accent);
+}
+
+.mdr-side__empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Collapsed State */
+.mdr-side.left-collapsed {
+  width: 0;
+  border-right: none;
+  overflow: hidden;
+}
+
+.mdr-side.left-collapsed .mdr-side__head,
+.mdr-side.left-collapsed .mdr-side__search,
+.mdr-side.left-collapsed .mdr-side__content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Body adjustment for side panel */
+body:not(.left-collapsed) {
+  margin-left: 250px;
+}
+
+body.left-collapsed {
+  margin-left: 0;
+}
+
+/* Transition for smooth collapse */
+.mdr-side {
+  transition: width 0.2s ease;
+}
+
+.mdr-side__head,
+.mdr-side__search,
+.mdr-side__content {
+  transition: opacity 0.15s ease;
+}
+
+/* Legacy support */
 .mdr-side__file-tree {
   display: flex;
   flex-direction: column;

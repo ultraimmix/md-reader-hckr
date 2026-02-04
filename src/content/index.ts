@@ -1,6 +1,7 @@
 /**
  * Main Content Script for Markdown Reader
  * Parses and renders markdown files with enhanced styling
+ * Includes file tree for directory browsing on file:// protocol
  */
 
 // ============================================================================
@@ -18,7 +19,14 @@ const CLASSES = {
   CONTENT: `${PREFIX}-content`,
   CODE_BLOCK: `${PREFIX}-code-block`,
   COPY_BTN: `${PREFIX}-block__copy-btn`,
-  GALLERY: `${PREFIX}-gallery`
+  GALLERY: `${PREFIX}-gallery`,
+  SIDE: `${PREFIX}-side`,
+  SIDE_HEAD: `${PREFIX}-side__head`,
+  SIDE_CONTENT: `${PREFIX}-side__content`,
+  SIDE_TOGGLE: `${PREFIX}-side__toggle`,
+  FOLDER: `${PREFIX}-folder`,
+  FILE_ITEM: `${PREFIX}-file-item`,
+  FILE_TREE: `${PREFIX}-file-tree`
 };
 
 const STORAGE_KEYS = {
@@ -28,17 +36,40 @@ const STORAGE_KEYS = {
   TEXT_FONT: 'mdrTextFont',
   CENTERED_MODE: 'centeredMode',
   SIDE_PANEL: 'sidePanel',
-  AUTO_REFRESH: 'autoRefresh'
+  AUTO_REFRESH: 'autoRefresh',
+  EXPANDED_FOLDERS: 'mdrExpandedFolders'
 };
 
 const THEME_OPTIONS = ['auto', 'light', 'dark'];
 
-const FONT_SIZE_OPTIONS = ['Tiny', 'Small', 'Normal', 'Medium', 'Large', 'Extra Large'];
-const FONT_SIZE_VALUES = [12, 14, 16, 18, 20, 24];
-const FONT_SIZE_MAP = FONT_SIZE_OPTIONS.reduce((acc, opt, i) => {
-  acc[opt] = FONT_SIZE_VALUES[i];
-  return acc;
-}, {} as Record<string, number>);
+const MD_EXTENSIONS = ['.md', '.mdx', '.mdc', '.mkd', '.txt', '.markdown'];
+
+// SVG Icons
+const ICONS = {
+  chevronDown: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
+  chevronRight: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
+  folder: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>',
+  folderOpen: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>',
+  file: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>',
+  markdown: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.56 18H3.44C2.65 18 2 17.37 2 16.59V7.41C2 6.63 2.65 6 3.44 6h17.12c.79 0 1.44.63 1.44 1.41v9.18c0 .78-.65 1.41-1.44 1.41zM6.81 15.19v-3.66l1.92 2.35 1.92-2.35v3.66h1.93V8.81h-1.93l-1.92 2.35-1.92-2.35H4.89v6.38h1.92zm10.91-1.77c.63 0 1.14-.28 1.14-.63v-.01c0-.35-.51-.63-1.14-.63H15.5c-.63 0-1.14.28-1.14.63v.01c0 .35.51.63 1.14.63h2.22z"/></svg>',
+  panelLeft: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>',
+  search: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+};
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface TreeNode {
+  name: string;
+  path: string;
+  isFolder: boolean;
+  isMarkdown: boolean;
+  expanded: boolean;
+  children: TreeNode[];
+  loaded: boolean;
+  hidden: boolean;
+}
 
 // ============================================================================
 // State
@@ -47,21 +78,262 @@ const FONT_SIZE_MAP = FONT_SIZE_OPTIONS.reduce((acc, opt, i) => {
 let sideCollapsed = false;
 let centeredMode = false;
 let refreshEnabled = true;
+let expandedFolders: Set<string> = new Set();
 
 // ============================================================================
 // Utility Functions
 // ============================================================================
 
-function logInfo(...args: unknown[]): void {
-  console.info(`%c `, 'font-size:0;background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAC8bSURBVHgB7d1PbFzHle/xo0GWJKDZmdqkDZjMMhK1lthaWiIQGQ+xaMCBKUcCnh8SWxRgI8+2/jtRQAGi5AngAeRYNGzAtOcBVgBJWaoprUUpyyEDuGcjevc8oPacOt3VcrvFf03eOrfq1vcD3DRlO3Fs9b31u1XnVIkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFARuyRyq6uru91HzV+7uy6sremuHzrXrl27HguApKzx3BP/M9bWeeY1O5/u2feDYENRBQD/pT/qrl+6a6+/GOx3TkPAD/5zXj/dzdEUAKVzzz19ztXlx+deTXjuFaHzzOO5t47SA4D78tfdx6+kfQPsFVhpuqsh7RujwY0B2Oga8PW5x0uOLQ0DDXf9zT3zGpK5UgKAf9N/x12nhC9/LBru+lwIA0Dh/IvOmLsmhan8WDTddctd13N95pkGAH8TnJN2+kW8Zt31OQkZ2D7/ojMpP85wIl6dINCQjJgEAAb+ZDXddcHdFLMCYEvc867mPt4QZ5hT1JSMnnlBAwADf2U0hSAAbMgP/Pq8mxSkruGu41VfGvgXCUCnvtw14368Jwz+VVBz1033e/qduyYFwDNdz7vvhMG/Kuru0ufdjF/KqaTCZwD8W/9NodClypruOkSxIHLnnndazHxemOqvsqa0ZwMaUjGFzgB0vfXXBFVWk3Y6PidAhrSVz136rLsmDP5VV3PXvSo+7wqZAfBrX/rWXxfkpinMBiAj/q3/miBHuo/AK1V53u14BsBvasFaf75qwmwAMqAvOl1v/chTa7zzL73J29EMgF/v/1aYAkOb9tIeZw9uVA21Teihzzh91t2ShG07ALgbQvtcZwX4qaawJIAKYcofG5h0z7rPJVHbWgJg8McGatKeIuNcByTPL20x+GM9s348TFLfMwB+KuyeABurxBQZ8uWedTrlPynA5g6l2CbYVwDwhQ+PhDV/bF3SU2TIE4M/+qQvPBoCHktCtrwE4Ad/ffNn8Ec/kp4iQ34Y/LENOi5+m1p3wJZnANw/mL75s66L7Upyigx58ZuZnRJgex6759w+ScSWZgB8IQyDP3biWwoDETP/nGPwx07s9SEyCZvOAMRS9Le8vCyLi0uy8vSpLD9ZFjxvcHBQhoZecJ8DMjw80vqMTFNoEUSEYm31637uPV15KisrK4LnDe0Zkj3u2TcwMCAjIyMSgSRmPDcMAP4UJJ36r4kx/eLPzz9w131ZXPonX/x") no-repeat 100%/100px;padding:50px;');
+function isFileProtocol(): boolean {
+  return window.location.protocol === 'file:';
 }
 
-function cn(...classes: (string | undefined | false | null)[]): string {
-  return classes.filter(Boolean).join(' ');
+function isMarkdownFile(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return MD_EXTENSIONS.some(ext => lower.endsWith(ext));
 }
 
-function buildClass(...parts: string[]): string {
-  return parts.join('-');
+function getParentPath(path: string): string {
+  const parts = path.split('/').filter(Boolean);
+  parts.pop();
+  return '/' + parts.join('/');
+}
+
+function getCurrentFilePath(): string {
+  return decodeURIComponent(window.location.pathname);
+}
+
+function getCurrentDirPath(): string {
+  const path = getCurrentFilePath();
+  // If it's a file, get parent directory; if it's a directory, use as-is
+  if (path.endsWith('/')) {
+    return path;
+  }
+  return getParentPath(path) + '/';
+}
+
+function pathToFileUrl(path: string): string {
+  // Convert a filesystem path to a file:// URL
+  // Make sure path starts with /
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  return 'file://' + path;
+}
+
+// ============================================================================
+// Directory Listing Parser
+// ============================================================================
+
+// Supported file extensions for filtering
+const SUPPORTED_EXTENSIONS = ['.md', '.mdx', '.mdc', '.mkd', '.txt', '.markdown'];
+
+class DirectoryParser {
+  /**
+   * Parse Chrome's directory listing HTML (for file:// protocol)
+   * Chrome uses addRow() JavaScript calls in its directory listing
+   */
+  parseDirectoryListing(html: string, basePath: string): TreeNode[] {
+    const nodes: TreeNode[] = [];
+
+    // Chrome's directory listing format uses addRow() calls:
+    // addRow("name", "path", isFolder, size, "sizeUnit", timestamp, "date")
+    const addRowRegex = /addRow\("(.*?)",\s*"(.*?)",\s*(\d+),\s*(\d+),\s*"([\d.]+ [BkMG]B?)",\s*(\d+),\s*"(.*?)"\);/g;
+
+    let match;
+    while ((match = addRowRegex.exec(html)) !== null) {
+      const name = match[1];
+      const relativePath = match[2];
+      const isFolder = !!Number.parseInt(match[3]);
+
+      // Skip parent directory
+      if (name === '..') continue;
+
+      // For files, filter by supported extensions
+      if (!isFolder) {
+        const lowerName = name.toLowerCase();
+        if (!SUPPORTED_EXTENSIONS.some(ext => lowerName.endsWith(ext))) {
+          continue;
+        }
+      }
+
+      // Build full path
+      let fullPath = basePath;
+      if (!fullPath.endsWith('/')) {
+        fullPath += '/';
+      }
+      // Use the relativePath from addRow which is already properly encoded
+      fullPath += relativePath;
+
+      // Check if it's hidden (starts with .)
+      const hidden = name.startsWith('.');
+
+      nodes.push({
+        name,
+        path: fullPath,
+        isFolder,
+        isMarkdown: !isFolder && isMarkdownFile(name),
+        expanded: false,
+        children: [],
+        loaded: false,
+        hidden
+      });
+    }
+
+    // Fallback: Try parsing anchor tags (Firefox/other browsers)
+    if (nodes.length === 0) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const links = doc.querySelectorAll('a[href]');
+
+      for (const link of links) {
+        const href = link.getAttribute('href') || '';
+        let name = link.textContent?.trim() || href;
+
+        // Skip parent directory links and empty entries
+        if (!name || name === '.' || name === '..' || name === '../' || href === '../') {
+          continue;
+        }
+
+        // Skip absolute URLs (not directory entries)
+        if (href.startsWith('http://') || href.startsWith('https://')) {
+          continue;
+        }
+
+        // Determine if it's a folder
+        const isFolder = href.endsWith('/') || name.endsWith('/');
+        name = name.replace(/\/$/, '');
+
+        // For files, filter by supported extensions
+        if (!isFolder) {
+          const lowerName = name.toLowerCase();
+          if (!SUPPORTED_EXTENSIONS.some(ext => lowerName.endsWith(ext))) {
+            continue;
+          }
+        }
+
+        // Build full path
+        let fullPath = basePath;
+        if (!fullPath.endsWith('/')) {
+          fullPath += '/';
+        }
+        fullPath += encodeURIComponent(name);
+        if (isFolder) {
+          fullPath += '/';
+        }
+
+        const hidden = name.startsWith('.');
+
+        nodes.push({
+          name,
+          path: fullPath,
+          isFolder,
+          isMarkdown: !isFolder && isMarkdownFile(name),
+          expanded: false,
+          children: [],
+          loaded: false,
+          hidden
+        });
+      }
+    }
+
+    // Sort: folders first, then files, alphabetically
+    nodes.sort((a, b) => {
+      if (a.isFolder && !b.isFolder) return -1;
+      if (!a.isFolder && b.isFolder) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return nodes;
+  }
+}
+
+// ============================================================================
+// Directory Loader
+// ============================================================================
+
+class DirectoryLoader {
+  private parser: DirectoryParser;
+  private cache: Map<string, TreeNode[]> = new Map();
+
+  constructor() {
+    this.parser = new DirectoryParser();
+  }
+
+  async loadDirectory(path: string): Promise<TreeNode[]> {
+    // Check cache first
+    if (this.cache.has(path)) {
+      return this.cache.get(path)!;
+    }
+
+    // Only works for file:// protocol
+    if (!isFileProtocol()) {
+      return [];
+    }
+
+    try {
+      // Convert path to file:// URL if needed
+      let url = path;
+      if (!url.startsWith('file://')) {
+        url = pathToFileUrl(path);
+      }
+
+      // Ensure directory path ends with /
+      if (!url.endsWith('/')) {
+        url += '/';
+      }
+
+      console.log('[MDR] Loading directory via background script:', url);
+
+      // Use background script to fetch (bypasses CORS restrictions)
+      const html = await this.fetchViaBackground(url);
+      if (!html) {
+        console.warn(`[MDR] Failed to load directory: ${url}`);
+        return [];
+      }
+
+      console.log('[MDR] Directory HTML loaded, length:', html.length);
+      console.log('[MDR] HTML preview:', html.substring(0, 500));
+
+      const nodes = this.parser.parseDirectoryListing(html, url);
+      console.log('[MDR] Parsed', nodes.length, 'nodes from directory');
+
+      // Cache the results
+      this.cache.set(path, nodes);
+
+      return nodes;
+    } catch (error) {
+      console.error('[MDR] Error loading directory:', error);
+      return [];
+    }
+  }
+
+  private fetchViaBackground(url: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      // Send message to background script to fetch the URL
+      chrome.runtime.sendMessage(
+        { type: 'bg-fetch', url },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('[MDR] Background fetch error:', chrome.runtime.lastError);
+            resolve(null);
+            return;
+          }
+
+          if (response?.success && response.data) {
+            resolve(response.data);
+          } else {
+            console.error('[MDR] Background fetch failed:', response?.error);
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  clearCache(): void {
+    this.cache.clear();
+  }
 }
 
 // ============================================================================
@@ -180,10 +452,8 @@ class ImageGallery {
   }
 
   private createGallery(): void {
-    // Remove existing gallery
     this.closeGallery();
 
-    // Create gallery overlay
     this.gallery = document.createElement('div');
     this.gallery.className = CLASSES.GALLERY;
 
@@ -200,7 +470,6 @@ class ImageGallery {
 
     document.body.appendChild(this.gallery);
 
-    // Setup event listeners
     const closeBtn = this.gallery.querySelector(`.${CLASSES.GALLERY}__close`);
     closeBtn?.addEventListener('click', () => this.closeGallery());
 
@@ -208,7 +477,6 @@ class ImageGallery {
       if (e.target === this.gallery) this.closeGallery();
     });
 
-    // Create thumbnails
     this.updateThumbnails();
   }
 
@@ -277,28 +545,21 @@ class MarkdownRenderer {
   }
 
   render(): void {
-    // Get the raw markdown content
     const content = this.element.textContent || '';
-
-    // Basic markdown parsing (in a real implementation, use markdown-it)
     const html = this.parseMarkdown(content);
 
-    // Create a wrapper
     const wrapper = document.createElement('div');
     wrapper.className = CLASSES.CONTENT;
     wrapper.innerHTML = html;
 
-    // Replace the original content
+    // Clear body and add content wrapper
+    // Side panel will be created AFTER this by init()
     this.element.innerHTML = '';
     this.element.appendChild(wrapper);
 
-    // Add loaded attribute
     document.documentElement.setAttribute('mdr-loaded', '');
 
-    // Process the rendered content
     this.postRender(wrapper);
-
-    // Initialize image gallery
     this.imageGallery.init();
   }
 
@@ -437,88 +698,384 @@ class MarkdownRenderer {
 
 class SidePanel {
   private panel: HTMLElement | null = null;
+  private contentArea: HTMLElement | null = null;
   private isCollapsed: boolean = false;
+  private loader: DirectoryLoader;
+  private rootNodes: TreeNode[] = [];
+  private currentPath: string = '';
+  private showHiddenFiles: boolean = false;
+  private searchQuery: string = '';
 
   constructor() {
+    this.loader = new DirectoryLoader();
+    this.currentPath = getCurrentFilePath();
     this.create();
   }
 
   private create(): void {
     // Check if side panel already exists
-    this.panel = document.querySelector('.mdr-side');
+    this.panel = document.querySelector(`.${CLASSES.SIDE}`);
 
     if (!this.panel) {
       this.panel = document.createElement('aside');
-      this.panel.className = 'mdr-side';
+      this.panel.className = CLASSES.SIDE;
+      // Apply inline styles to ensure visibility (CSS may not be loaded yet)
+      this.panel.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 250px;
+        background: var(--bg-card, #ffffff);
+        border-right: 1px solid var(--border-color, #e0e0e0);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+      `;
       document.body.prepend(this.panel);
-      this.populateContent();
     }
 
-    this.setupToggleButton();
+    this.buildPanelStructure();
+    this.loadFileTree();
   }
 
-  private populateContent(): void {
+  private buildPanelStructure(): void {
     if (!this.panel) return;
 
-    // Get current file path
-    const path = window.location.pathname;
-
-    // Create file tree UI
+    // Header with title and toggle button
     const header = document.createElement('div');
-    header.className = 'mdr-side__head';
+    header.className = CLASSES.SIDE_HEAD;
     header.innerHTML = `
-      <div class="mdr-side__title">Files</div>
-      <button class="mdr-side__toggle" aria-label="Toggle side panel">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
-        </svg>
+      <div class="mdr-side__title-wrapper">
+        <span class="mdr-side__icon">${ICONS.panelLeft}</span>
+        <span class="mdr-side__title">Files</span>
+      </div>
+      <button class="${CLASSES.SIDE_TOGGLE}" aria-label="Toggle side panel">
+        ${ICONS.chevronRight}
       </button>
     `;
 
+    // Search bar
     const search = document.createElement('div');
     search.className = 'mdr-side__search';
     search.innerHTML = `
-      <input type="text" placeholder="Search files..." aria-label="Search files" />
+      <div class="mdr-side__search-wrapper">
+        <span class="mdr-side__search-icon">${ICONS.search}</span>
+        <input type="text" placeholder="Search files..." aria-label="Search files" />
+      </div>
     `;
 
-    const content = document.createElement('div');
-    content.className = 'mdr-side__content';
-    content.innerHTML = `
-      <div class="mdr-side__file-tree">
-        <div class="file-item" data-path="${path}">
-          <span class="file-icon">📄</span>
-          <span class="file-name">${path.split('/').pop() || 'README.md'}</span>
-        </div>
-      </div>
+    // Content area for file tree
+    this.contentArea = document.createElement('div');
+    this.contentArea.className = CLASSES.SIDE_CONTENT;
+
+    // Loading indicator
+    this.contentArea.innerHTML = `
+      <div class="mdr-side__loading">Loading files...</div>
     `;
 
     this.panel.innerHTML = '';
     this.panel.appendChild(header);
     this.panel.appendChild(search);
-    this.panel.appendChild(content);
+    this.panel.appendChild(this.contentArea);
 
-    // Setup search
+    // Setup event listeners
+    const toggleBtn = header.querySelector(`.${CLASSES.SIDE_TOGGLE}`);
+    toggleBtn?.addEventListener('click', () => this.toggle());
+
     const searchInput = search.querySelector('input');
     searchInput?.addEventListener('input', (e) => {
-      const query = (e.target as HTMLInputElement).value.toLowerCase();
-      this.filterFiles(query);
-    });
-
-    // Setup toggle button
-    const toggleBtn = header.querySelector('.mdr-side__toggle');
-    toggleBtn?.addEventListener('click', () => this.toggle());
-  }
-
-  private filterFiles(query: string): void {
-    const fileItems = this.panel?.querySelectorAll('.file-item');
-    fileItems?.forEach(item => {
-      const name = item.querySelector('.file-name')?.textContent?.toLowerCase() || '';
-      (item as HTMLElement).style.display = name.includes(query) ? 'flex' : 'none';
+      this.searchQuery = (e.target as HTMLInputElement).value.toLowerCase();
+      this.renderTree();
     });
   }
 
-  private setupToggleButton(): void {
-    // Toggle button is set up in populateContent
+  private async loadFileTree(): Promise<void> {
+    if (!isFileProtocol()) {
+      // For non-file protocol, just show current file
+      this.showCurrentFileOnly();
+      return;
+    }
+
+    // Load expanded folders from storage
+    await this.loadExpandedFolders();
+
+    // Get parent directory of current file
+    const currentDir = getCurrentDirPath();
+
+    try {
+      this.rootNodes = await this.loader.loadDirectory(currentDir);
+
+      // Mark current file as active
+      this.markCurrentFile();
+
+      // Auto-expand to current file
+      await this.expandToCurrentFile();
+
+      this.renderTree();
+    } catch (error) {
+      console.error('[MDR] Failed to load file tree:', error);
+      this.showError('Failed to load directory');
+    }
+  }
+
+  private showCurrentFileOnly(): void {
+    if (!this.contentArea) return;
+
+    const fileName = getCurrentFilePath().split('/').pop() || 'README.md';
+
+    this.contentArea.innerHTML = `
+      <div class="${CLASSES.FILE_TREE}">
+        <div class="${CLASSES.FILE_ITEM} active" data-path="${getCurrentFilePath()}">
+          <span class="file-icon">${isMarkdownFile(fileName) ? ICONS.markdown : ICONS.file}</span>
+          <span class="file-name">${fileName}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  private showError(message: string): void {
+    if (!this.contentArea) return;
+
+    this.contentArea.innerHTML = `
+      <div class="mdr-side__error">
+        <p>${message}</p>
+        <button class="mdr-side__retry-btn">Retry</button>
+      </div>
+    `;
+
+    const retryBtn = this.contentArea.querySelector('.mdr-side__retry-btn');
+    retryBtn?.addEventListener('click', () => {
+      this.loader.clearCache();
+      this.loadFileTree();
+    });
+  }
+
+  private markCurrentFile(): void {
+    const currentPath = getCurrentFilePath();
+
+    const markRecursive = (nodes: TreeNode[]) => {
+      for (const node of nodes) {
+        // Remove trailing slash for comparison
+        const nodePath = node.path.replace(/\/$/, '');
+        const comparePath = currentPath.replace(/\/$/, '');
+
+        if (decodeURIComponent(nodePath) === comparePath) {
+          // Found current file
+          return true;
+        }
+
+        if (node.children.length > 0) {
+          markRecursive(node.children);
+        }
+      }
+      return false;
+    };
+
+    markRecursive(this.rootNodes);
+  }
+
+  private async expandToCurrentFile(): Promise<void> {
+    // The current file should be visible, so expand parent folders
+    const currentPath = getCurrentFilePath();
+    const currentDir = getCurrentDirPath();
+
+    // Expand root level
+    for (const node of this.rootNodes) {
+      if (expandedFolders.has(node.path)) {
+        node.expanded = true;
+        if (node.isFolder && !node.loaded) {
+          await this.loadChildren(node);
+        }
+      }
+    }
+  }
+
+  private async loadChildren(node: TreeNode): Promise<void> {
+    if (node.loaded || !node.isFolder) return;
+
+    try {
+      node.children = await this.loader.loadDirectory(node.path);
+      node.loaded = true;
+
+      // Recursively expand children that were previously expanded
+      for (const child of node.children) {
+        if (child.isFolder && expandedFolders.has(child.path)) {
+          child.expanded = true;
+          await this.loadChildren(child);
+        }
+      }
+    } catch (error) {
+      console.error(`[MDR] Failed to load children for ${node.path}:`, error);
+    }
+  }
+
+  private renderTree(): void {
+    if (!this.contentArea) return;
+
+    console.log('[MDR] renderTree called, rootNodes:', this.rootNodes.length);
+    console.log('[MDR] First few nodes:', this.rootNodes.slice(0, 3).map(n => ({ name: n.name, isFolder: n.isFolder, hidden: n.hidden })));
+
+    const treeContainer = document.createElement('div');
+    treeContainer.className = CLASSES.FILE_TREE;
+
+    // Render nodes
+    this.renderNodes(this.rootNodes, treeContainer, 0);
+
+    console.log('[MDR] Tree container children:', treeContainer.children.length);
+
+    this.contentArea.innerHTML = '';
+    this.contentArea.appendChild(treeContainer);
+
+    // Debug: Check if panel is visible
+    console.log('[MDR] Panel element:', this.panel);
+    console.log('[MDR] Panel in document:', document.body.contains(this.panel));
+    console.log('[MDR] Panel parentNode:', this.panel?.parentNode);
+    console.log('[MDR] Panel style.display:', this.panel?.style.display);
+    console.log('[MDR] Panel offsetWidth:', this.panel?.offsetWidth);
+    console.log('[MDR] Panel offsetHeight:', this.panel?.offsetHeight);
+    console.log('[MDR] Panel getBoundingClientRect:', this.panel?.getBoundingClientRect());
+    console.log('[MDR] Content area:', this.contentArea);
+    console.log('[MDR] Content area innerHTML length:', this.contentArea.innerHTML.length);
+
+    // If no visible nodes (all filtered out), show message
+    if (treeContainer.children.length === 0) {
+      treeContainer.innerHTML = `
+        <div class="mdr-side__empty">
+          ${this.searchQuery ? 'No matching files' : 'No files found'}
+        </div>
+      `;
+    }
+  }
+
+  private renderNodes(nodes: TreeNode[], container: HTMLElement, depth: number): void {
+    const currentPath = getCurrentFilePath();
+
+    for (const node of nodes) {
+      // Skip hidden files unless showing them
+      if (node.hidden && !this.showHiddenFiles) continue;
+
+      // Apply search filter
+      if (this.searchQuery) {
+        const matchesSearch = node.name.toLowerCase().includes(this.searchQuery);
+        const hasMatchingChildren = this.hasMatchingChildren(node);
+        if (!matchesSearch && !hasMatchingChildren) continue;
+      }
+
+      const item = document.createElement('div');
+      item.className = CLASSES.FILE_ITEM;
+      item.setAttribute('data-path', node.path);
+      item.setAttribute('data-depth', String(depth));
+      item.style.paddingLeft = `${12 + depth * 16}px`;
+
+      // Check if this is the current file
+      const nodePath = decodeURIComponent(node.path.replace(/\/$/, ''));
+      if (nodePath === currentPath) {
+        item.classList.add('active');
+      }
+
+      // Build item content
+      if (node.isFolder) {
+        item.classList.add('is-folder');
+        item.innerHTML = `
+          <span class="file-chevron">${node.expanded ? ICONS.chevronDown : ICONS.chevronRight}</span>
+          <span class="file-icon">${node.expanded ? ICONS.folderOpen : ICONS.folder}</span>
+          <span class="file-name">${this.highlightSearch(node.name)}</span>
+        `;
+
+        // Click to toggle expand/collapse
+        item.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          await this.toggleNode(node);
+        });
+      } else {
+        item.innerHTML = `
+          <span class="file-chevron"></span>
+          <span class="file-icon">${node.isMarkdown ? ICONS.markdown : ICONS.file}</span>
+          <span class="file-name">${this.highlightSearch(node.name)}</span>
+        `;
+
+        // Click to navigate
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.location.href = node.path;
+        });
+      }
+
+      container.appendChild(item);
+
+      // Render children if expanded
+      if (node.isFolder && node.expanded && node.children.length > 0) {
+        this.renderNodes(node.children, container, depth + 1);
+      }
+    }
+  }
+
+  private hasMatchingChildren(node: TreeNode): boolean {
+    if (!node.isFolder) return false;
+
+    for (const child of node.children) {
+      if (child.name.toLowerCase().includes(this.searchQuery)) {
+        return true;
+      }
+      if (this.hasMatchingChildren(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private highlightSearch(text: string): string {
+    if (!this.searchQuery) return text;
+
+    const regex = new RegExp(`(${this.escapeRegex(this.searchQuery)})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private async toggleNode(node: TreeNode): Promise<void> {
+    node.expanded = !node.expanded;
+
+    // Load children if expanding and not loaded
+    if (node.expanded && !node.loaded) {
+      await this.loadChildren(node);
+    }
+
+    // Update expanded folders set
+    if (node.expanded) {
+      expandedFolders.add(node.path);
+    } else {
+      expandedFolders.delete(node.path);
+    }
+
+    // Save state
+    this.saveExpandedFolders();
+
+    // Re-render
+    this.renderTree();
+  }
+
+  private async loadExpandedFolders(): Promise<void> {
+    try {
+      const result = await new Promise<{ [key: string]: string[] }>((resolve) => {
+        chrome.storage.local.get([STORAGE_KEYS.EXPANDED_FOLDERS], resolve);
+      });
+
+      const folders = result[STORAGE_KEYS.EXPANDED_FOLDERS] || [];
+      expandedFolders = new Set(folders);
+    } catch (error) {
+      expandedFolders = new Set();
+    }
+  }
+
+  private saveExpandedFolders(): void {
+    chrome.storage.local.set({
+      [STORAGE_KEYS.EXPANDED_FOLDERS]: Array.from(expandedFolders)
+    });
   }
 
   toggle(): void {
@@ -527,6 +1084,12 @@ class SidePanel {
     if (this.panel) {
       this.panel.classList.toggle('left-collapsed', this.isCollapsed);
       document.body.classList.toggle('left-collapsed', this.isCollapsed);
+    }
+
+    // Update toggle button icon
+    const toggleBtn = this.panel?.querySelector(`.${CLASSES.SIDE_TOGGLE}`);
+    if (toggleBtn) {
+      toggleBtn.innerHTML = this.isCollapsed ? ICONS.chevronRight : ICONS.chevronRight;
     }
 
     // Save state
@@ -611,14 +1174,12 @@ class MessageHandler {
     refreshEnabled = !refreshEnabled;
     chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REFRESH]: refreshEnabled });
 
-    // If enabling, set up auto-refresh
     if (refreshEnabled) {
       this.setupAutoRefresh();
     }
   }
 
   private setupAutoRefresh(): void {
-    // Listen for file changes (basic implementation)
     if ('BroadcastChannel' in window) {
       const channel = new BroadcastChannel('mdr-refresh');
       channel.onmessage = () => {
@@ -643,6 +1204,14 @@ async function init(): Promise<void> {
   // Initialize managers
   const themeManager = new ThemeManager();
   const imageGallery = new ImageGallery();
+
+  // Render markdown content FIRST (before creating side panel)
+  // This clears the body and creates the content wrapper
+  const body = document.body;
+  const renderer = new MarkdownRenderer(body, imageGallery);
+  renderer.render();
+
+  // NOW create side panel (after body has been set up)
   const sidePanel = new SidePanel();
   const messageHandler = new MessageHandler(themeManager, sidePanel);
 
@@ -660,11 +1229,6 @@ async function init(): Promise<void> {
 
   // Initialize message handler
   messageHandler.init();
-
-  // Render markdown content
-  const body = document.body;
-  const renderer = new MarkdownRenderer(body, imageGallery);
-  renderer.render();
 
   // Listen for system theme changes
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {

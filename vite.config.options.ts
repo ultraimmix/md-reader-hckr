@@ -1,24 +1,26 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import UnoCSS from 'unocss/vite';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  root: resolve(__dirname, 'src/options'),
   plugins: [
     vue(),
     UnoCSS()
   ],
   build: {
-    emptyOutDir: false,
+    emptyOutDir: true,
+    outDir: resolve(__dirname, 'dist/options'),
     rollupOptions: {
-      input: {
-        options: resolve(__dirname, 'src/options/index.html')
-      },
+      input: resolve(__dirname, 'src/options/index.html'),
       output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
-        dir: resolve(__dirname, 'dist/options')
+        entryFileNames: '[name]-[hash].js',
+        chunkFileNames: '[name]-[hash].js',
+        assetFileNames: '[name]-[hash].[ext]'
       }
     }
   },

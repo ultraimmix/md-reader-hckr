@@ -10,7 +10,7 @@
    },
    "author": "Bener",
    "background": {
-      "service_worker": "./dist/background/index.mjs"
+      "service_worker": "./dist/background/index.new.mjs"
    },
    "commands": {
       "toggleCentered": {
@@ -39,8 +39,8 @@
       }
    },
    "content_scripts": [ {
-      "css": [ "dist/content/style.css", "dist/content/three-column.css" ],
-      "js": [ "dist/content/index.global.js", "dist/content/three-column.js" ],
+      "css": [ "dist/content/style.new.css", "dist/content/three-column.css" ],
+      "js": [ "dist/content/index.global.new.js", "dist/content/three-column.js" ],
       "matches": [ "*://*/*.md", "*://*/*.mdx", "*://*/*.mdc", "*://*/*.mkd", "*://*/*.txt", "*://*/*.markdown", "*://*/*.MD", "*://*/*.MDX", "*://*/*.MDC", "*://*/*.MKD", "*://*/*.TXT", "*://*/*.MARKDOWN", "file://*/*.md", "file://*/*.mdx", "file://*/*.mdc", "file://*/*.mkd", "file://*/*.txt", "file://*/*.markdown", "file://*/*.MD", "file://*/*.MDX", "file://*/*.MDC", "file://*/*.MKD", "file://*/*.TXT", "file://*/*.MARKDOWN", "*://*/*.md?*", "*://*/*.mdx?*", "*://*/*.mdc?*", "*://*/*.mkd?*", "*://*/*.txt?*", "*://*/*.markdown?*", "*://*/*.MD?*", "*://*/*.MDX?*", "*://*/*.MDC?*", "*://*/*.MKD?*", "*://*/*.TXT?*", "*://*/*.MARKDOWN?*", "file://*/*.md?*", "file://*/*.mdx?*", "file://*/*.mdc?*", "file://*/*.mkd?*", "file://*/*.txt?*", "file://*/*.markdown?*", "file://*/*.MD?*", "file://*/*.MDX?*", "file://*/*.MDC?*", "file://*/*.MKD?*", "file://*/*.TXT?*", "file://*/*.MARKDOWN?*", "file://*/*/", "file:///" ],
       "run_at": "document_start"
    } ],

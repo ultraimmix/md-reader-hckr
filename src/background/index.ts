@@ -51,8 +51,28 @@ chrome.commands.onCommand.addListener(async (command) => {
   }
 });
 
-// Handle messages from popup/options
+// Handle messages from popup/options and content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Handle bg-fetch request - proxy fetch for content scripts (bypasses CORS)
+  if (message.type === 'bg-fetch') {
+    const { url } = message;
+    console.log('[MDR Background] Fetching:', url);
+
+    fetch(url)
+      .then(response => response.text())
+      .then(text => {
+        console.log('[MDR Background] Fetch success, length:', text.length);
+        sendResponse({ success: true, data: text });
+      })
+      .catch(error => {
+        console.error('[MDR Background] Fetch error:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+
+    // Return true to indicate we'll send response asynchronously
+    return true;
+  }
+
   if (message.action === 'getTheme') {
     chrome.storage.local.get([THEME_STORAGE_KEY], (result) => {
       sendResponse(result[THEME_STORAGE_KEY] || 'auto');

@@ -1,26 +1,21 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import UnoCSS from 'unocss/vite';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-// Shared configuration
-const baseConfig = {
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    UnoCSS()
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
     }
   },
-  plugins: [
-    vue(),
-    UnoCSS({
-      // UnoCSS configuration
-    })
-  ]
-};
-
-// Background script config
-export default defineConfig({
-  ...baseConfig,
   build: {
     emptyOutDir: false,
     rollupOptions: {

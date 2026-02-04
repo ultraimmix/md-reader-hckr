@@ -7,12 +7,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   build: {
     emptyOutDir: false,
-    outDir: resolve(__dirname, 'dist/content'),
+    outDir: resolve(__dirname, 'dist/background'),
     lib: {
-      entry: resolve(__dirname, 'src/content/index.ts'),
-      name: 'MarkdownReaderContent',
-      fileName: () => 'index.global.new.js',
-      formats: ['iife']
+      entry: resolve(__dirname, 'src/background/index.ts'),
+      name: 'MarkdownReaderBackground',
+      fileName: () => 'index.new.mjs',
+      formats: ['es']
     },
     rollupOptions: {
       output: {

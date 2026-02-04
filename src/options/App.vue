@@ -2,7 +2,7 @@
   <div class="options-container" :class="{ 'dark': isDark }">
     <header class="options-header">
       <div class="header-content">
-        <img src="/assets/logo.png" alt="Markdown Reader" class="logo">
+        <img src="../../assets/logo.png" alt="Markdown Reader" class="logo">
         <h1>{{ t('ext_name') }}</h1>
         <span class="version">v{{ version }}</span>
       </div>
