@@ -750,7 +750,7 @@ class SidePanel {
         <span class="mdr-side__icon">${ICONS.panelLeft}</span>
         <span class="mdr-side__title">Files</span>
       </div>
-      <button class="${CLASSES.SIDE_TOGGLE}" aria-label="Toggle side panel">
+      <button class="${CLASSES.SIDE_TOGGLE}" aria-label="Collapse side panel">
         ${ICONS.chevronRight}
       </button>
     `;
@@ -1084,12 +1084,34 @@ class SidePanel {
     if (this.panel) {
       this.panel.classList.toggle('left-collapsed', this.isCollapsed);
       document.body.classList.toggle('left-collapsed', this.isCollapsed);
-    }
 
-    // Update toggle button icon
-    const toggleBtn = this.panel?.querySelector(`.${CLASSES.SIDE_TOGGLE}`);
-    if (toggleBtn) {
-      toggleBtn.innerHTML = this.isCollapsed ? ICONS.chevronRight : ICONS.chevronRight;
+      // Ensure header and toggle button visibility in collapsed state
+      const head = this.panel.querySelector(`.${CLASSES.SIDE_HEAD}`) as HTMLElement;
+      const toggleBtn = this.panel.querySelector(`.${CLASSES.SIDE_TOGGLE}`) as HTMLElement;
+
+      if (this.isCollapsed) {
+        // Collapsed state: show only toggle button
+        if (head) {
+          head.style.opacity = '1';
+          head.style.pointerEvents = 'auto';
+        }
+        if (toggleBtn) {
+          toggleBtn.style.opacity = '1';
+          toggleBtn.style.pointerEvents = 'auto';
+          toggleBtn.innerHTML = ICONS.chevronRight; // > to expand
+        }
+      } else {
+        // Expanded state: reset inline styles
+        if (head) {
+          head.style.opacity = '';
+          head.style.pointerEvents = '';
+        }
+        if (toggleBtn) {
+          toggleBtn.style.opacity = '';
+          toggleBtn.style.pointerEvents = '';
+          toggleBtn.innerHTML = ICONS.chevronRight; // > to collapse (will be rotated by CSS)
+        }
+      }
     }
 
     // Save state
@@ -1102,17 +1124,24 @@ class SidePanel {
     });
 
     const shouldShow = result.sidePanel !== false;
-    if (!shouldShow) {
+    if (!shouldShow || result.sidePanelCollapsed) {
       this.isCollapsed = true;
       if (this.panel) {
         this.panel.classList.add('left-collapsed');
         document.body.classList.add('left-collapsed');
-      }
-    } else if (result.sidePanelCollapsed) {
-      this.isCollapsed = true;
-      if (this.panel) {
-        this.panel.classList.add('left-collapsed');
-        document.body.classList.add('left-collapsed');
+
+        // Ensure header and toggle button visibility in collapsed state
+        const head = this.panel.querySelector(`.${CLASSES.SIDE_HEAD}`) as HTMLElement;
+        const toggleBtn = this.panel.querySelector(`.${CLASSES.SIDE_TOGGLE}`) as HTMLElement;
+
+        if (head) {
+          head.style.opacity = '1';
+          head.style.pointerEvents = 'auto';
+        }
+        if (toggleBtn) {
+          toggleBtn.style.opacity = '1';
+          toggleBtn.style.pointerEvents = 'auto';
+        }
       }
     }
   }

@@ -27,10 +27,22 @@
 }
 
 :root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__content,
-:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__head,
 :root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__search {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Keep header visible but hide content inside it except toggle button */
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__head .mdr-side__title-wrapper,
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__head .mdr-side__title {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Ensure toggle button is always visible and clickable */
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__toggle {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* Right panel (outline) - new panel */
@@ -176,6 +188,24 @@
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
+}
+
+/* Left sidebar toggle button positioning when collapsed */
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__toggle {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* Rotate icon to show expand direction when collapsed */
+:root[mdr-loaded] .mdr-side.left-collapsed .mdr-side__toggle svg {
+  transform: rotate(0deg); /* > pointing right to expand */
+}
+
+:root[mdr-loaded] .mdr-side:not(.left-collapsed) .mdr-side__toggle svg {
+  transform: rotate(180deg); /* < pointing left to collapse */
 }
 
 /* Print styles - hide panels */

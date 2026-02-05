@@ -755,11 +755,23 @@
   overflow: hidden;
 }
 
-.mdr-side.left-collapsed .mdr-side__head,
 .mdr-side.left-collapsed .mdr-side__search,
 .mdr-side.left-collapsed .mdr-side__content {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Hide header content but keep toggle button visible */
+.mdr-side.left-collapsed .mdr-side__head .mdr-side__title-wrapper,
+.mdr-side.left-collapsed .mdr-side__head .mdr-side__title {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Ensure toggle button is always visible and clickable when collapsed */
+.mdr-side.left-collapsed .mdr-side__toggle {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* Body adjustment for side panel */
